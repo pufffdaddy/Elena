@@ -33,6 +33,12 @@
   .big:hover,.big:focus-visible{transform:scale(1.04);outline:none}
   #main{display:flex;flex-direction:column;align-items:center;gap:clamp(12px,2vh,22px)}
   #main:hover .avatar{transform:scale(1.03)}
+  .role{font-size:clamp(16px,2.4vw,22px);font-weight:650;letter-spacing:.04em;text-shadow:0 2px 10px rgba(0,0,0,.85);margin-top:-6px}
+  .ringbtn{width:clamp(72px,10vw,92px);aspect-ratio:1;border-radius:50%;display:grid;place-items:center;background:#fff;color:#111;
+    box-shadow:0 10px 30px rgba(0,0,0,.5);transition:transform .15s;margin-top:6px}
+  .ringbtn svg{width:44%;height:44%;transition:transform .25s}
+  #main:hover .ringbtn,.ringbtn:hover,.ringbtn:focus-visible{transform:scale(1.08);outline:none}
+  #call.live #btn svg{transform:rotate(135deg)}
 
   #others{display:flex;flex-wrap:wrap;justify-content:center;gap:clamp(10px,1.8vw,22px);margin-top:clamp(6px,2vh,22px);max-width:900px}
   .mini{display:flex;flex-direction:column;align-items:center;gap:7px;width:clamp(86px,13vw,128px);min-width:0}
@@ -50,7 +56,7 @@
   #call.speaking .avatar{transform:scale(1.05)}
   @keyframes pulse{50%{box-shadow:0 0 0 3px #111,0 0 0 24px rgba(255,255,255,.35)}}
   #status{min-height:1.4em}
-  #call.live #btn{background:#111;color:#fff;border:2px solid #fff}
+  #call.live #btn{background:#111;color:#fff;border:3px solid #fff}
   @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>
 </head>
@@ -61,7 +67,8 @@
   <button id="main" type="button">
     <span class="avatar"><img src="avatar.jpg?v=2" alt="Elena"></span>
     <h1>Elena</h1>
-    <span class="big">Ring Elena</span>
+    <span class="role">Personlig Assistent</span>
+    <span class="ringbtn" aria-label="Ring Elena"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M6.6 10.8a15.1 15.1 0 0 0 6.6 6.6l2.2-2.2a1 1 0 0 1 1-.25c1.1.37 2.3.57 3.6.57a1 1 0 0 1 1 1V20a1 1 0 0 1-1 1C10.6 21 3 13.4 3 4a1 1 0 0 1 1-1h3.5a1 1 0 0 1 1 1c0 1.25.2 2.45.57 3.57a1 1 0 0 1-.25 1z"/></svg></span>
   </button>
   <div id="others"></div>
 </main>
@@ -70,8 +77,9 @@
   <button id="back" type="button">← Tilbake</button>
   <span class="avatar" id="av"></span>
   <h1 id="who"></h1>
+  <span class="role" id="role"></span>
   <div class="sub" id="status">Trykk for å ringe</div>
-  <button id="btn" class="big" type="button">Ring</button>
+  <button id="btn" class="ringbtn" type="button" aria-label="Ring"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M6.6 10.8a15.1 15.1 0 0 0 6.6 6.6l2.2-2.2a1 1 0 0 1 1-.25c1.1.37 2.3.57 3.6.57a1 1 0 0 1 1 1V20a1 1 0 0 1-1 1C10.6 21 3 13.4 3 4a1 1 0 0 1 1-1h3.5a1 1 0 0 1 1 1c0 1.25.2 2.45.57 3.57a1 1 0 0 1-.25 1z"/></svg></button>
 </section>
 
 <script type="module">
@@ -103,13 +111,13 @@ for (const p of PEOPLE.slice(1)) {
 /* call */
 const call = $("#call"), status = $("#status"), btn = $("#btn");
 let person = null, convo = null, busy = false, wake = null;
-const set = (state, text, live) => { call.className = state + (live ? " live" : ""); status.textContent = text; btn.textContent = live ? "Legg på" : "Ring " + person.name; };
+const set = (state, text, live) => { call.className = state + (live ? " live" : ""); status.textContent = text; btn.setAttribute("aria-label", live ? "Legg på" : "Ring " + person.name); };
 
 function open(p, autostart) {
   person = p;
   document.body.classList.add("incall");
   call.style.setProperty("--c", p.color);
-  $("#who").textContent = p.name;
+  $("#who").textContent = p.name; $("#role").textContent = p.role === "Personlig assistent" ? "Personlig Assistent" : p.role;
   const av = $("#av"); av.replaceChildren();
   if (p.photo) { const i = el("img"); i.src = "avatar.jpg?v=2"; i.alt = ""; av.append(i); } else av.append(el("span", null, p.mono));
   set("idle", "Trykk for å ringe", false);
