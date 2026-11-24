@@ -59,7 +59,7 @@
 
 <main id="lobby" class="screen">
   <button id="main" type="button">
-    <span class="avatar"><img src="avatar.jpg" alt="Elena"></span>
+    <span class="avatar"><img src="avatar.jpg?v=2" alt="Elena"></span>
     <h1>Elena</h1>
     <span class="big">Ring Elena</span>
   </button>
@@ -111,7 +111,7 @@ function open(p, autostart) {
   call.style.setProperty("--c", p.color);
   $("#who").textContent = p.name;
   const av = $("#av"); av.replaceChildren();
-  if (p.photo) { const i = el("img"); i.src = "avatar.jpg"; i.alt = ""; av.append(i); } else av.append(el("span", null, p.mono));
+  if (p.photo) { const i = el("img"); i.src = "avatar.jpg?v=2"; i.alt = ""; av.append(i); } else av.append(el("span", null, p.mono));
   set("idle", "Trykk for å ringe", false);
   try { history.replaceState(null, "", "#" + p.id); } catch (e) {}
   if (autostart) start();
