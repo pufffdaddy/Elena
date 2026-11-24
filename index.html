@@ -9,65 +9,172 @@
 <meta name="robots" content="noindex,nofollow">
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="icon-192.png">
-<title>Elena</title>
+<title>Rockstar – snakk med teamet</title>
 <style>
   *{box-sizing:border-box;margin:0}
-  html,body{height:100%;background:#0b0b0d;color:#fff;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;overflow:hidden}
-  #stage{position:fixed;inset:0;display:grid;place-items:center;cursor:pointer;-webkit-tap-highlight-color:transparent}
+  :root{--bg:#0b0b0f;--card:#16161d;--line:#26262f;--text:#f5f5f7;--dim:#a0a0ad;--c:#ff7a59}
+  html,body{height:100%;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
+  button{font:inherit;color:inherit;border:0;background:none;cursor:pointer;-webkit-tap-highlight-color:transparent}
+
+  /* ---------- lobby ---------- */
+  #lobby{min-height:100%;padding:calc(22px + env(safe-area-inset-top)) clamp(16px,4vw,48px) calc(28px + env(safe-area-inset-bottom));
+    background:radial-gradient(1200px 600px at 85% -10%,rgba(255,122,89,.16),transparent 60%),radial-gradient(900px 500px at -10% 110%,rgba(124,92,255,.14),transparent 60%),var(--bg)}
+  header{display:flex;align-items:baseline;justify-content:space-between;gap:16px;margin-bottom:clamp(16px,3vw,28px)}
+  header h1{font-size:clamp(22px,3.4vw,34px);font-weight:700;letter-spacing:-.02em}
+  header p{color:var(--dim);font-size:clamp(13px,1.6vw,16px)}
+  .grid{display:grid;gap:clamp(12px,1.6vw,20px);grid-template-columns:repeat(4,minmax(0,1fr));grid-auto-rows:minmax(150px,22vh)}
+  .card{position:relative;overflow:hidden;border-radius:22px;background:var(--card);border:1px solid var(--line);text-align:left;
+    display:flex;flex-direction:column;justify-content:flex-end;padding:18px;min-width:0;transition:transform .18s,border-color .18s,box-shadow .18s}
+  .card:hover,.card:focus-visible{transform:translateY(-3px);border-color:var(--c);box-shadow:0 12px 34px -14px var(--c);outline:none}
+  .card::before{content:"";position:absolute;inset:0;background:radial-gradient(420px 260px at 100% 0%,color-mix(in srgb,var(--c) 42%,transparent),transparent 70%)}
+  .card .mono{position:absolute;top:16px;left:18px;width:54px;height:54px;border-radius:16px;display:grid;place-items:center;
+    font-weight:700;font-size:18px;letter-spacing:.02em;color:#0b0b0f;background:var(--c)}
+  .card .dot{position:absolute;top:22px;right:18px;display:flex;align-items:center;gap:7px;font-size:12px;color:var(--dim)}
+  .card .dot i{width:8px;height:8px;border-radius:50%;background:#57d68d;box-shadow:0 0 0 0 rgba(87,214,141,.6);animation:ping 2.2s infinite}
+  @keyframes ping{70%{box-shadow:0 0 0 9px rgba(87,214,141,0)}100%{box-shadow:0 0 0 0 rgba(87,214,141,0)}}
+  .card h2{position:relative;font-size:clamp(17px,1.9vw,22px);font-weight:650;letter-spacing:-.01em}
+  .card p{position:relative;margin-top:4px;color:var(--dim);font-size:clamp(13px,1.3vw,15px);line-height:1.35}
+  .card.main{grid-column:span 2;grid-row:span 2;padding:26px}
+  .card.main img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:50% 20%}
+  .card.main::before{z-index:1;background:linear-gradient(to top,rgba(0,0,0,.88) 0%,rgba(0,0,0,.25) 48%,rgba(0,0,0,0) 70%)}
+  .card.main>*:not(img){z-index:2}
+  .card.main h2{font-size:clamp(30px,4.4vw,52px);font-weight:750}
+  .card.main p{color:#e8e8ee;font-size:clamp(15px,1.7vw,19px)}
+  .card.main .cta{position:relative;margin-top:16px;align-self:flex-start;background:#fff;color:#0b0b0f;font-weight:650;border-radius:999px;padding:12px 26px;font-size:clamp(15px,1.6vw,18px)}
+  .card.main .tag{position:absolute;top:22px;left:24px;background:var(--c);color:#0b0b0f;font-weight:700;font-size:12px;letter-spacing:.06em;text-transform:uppercase;border-radius:999px;padding:6px 12px}
+  @media (max-width:900px){.grid{grid-template-columns:repeat(2,minmax(0,1fr));grid-auto-rows:minmax(150px,auto)}.card.main{grid-row:span 1;min-height:58vh}}
+  @media (max-width:520px){.grid{grid-template-columns:1fr}.card.main{grid-column:span 1}.card{min-height:132px}}
+
+  /* ---------- call ---------- */
+  #call{position:fixed;inset:0;display:none;background:var(--bg)}
+  body.incall #call{display:block}
+  body.incall #lobby{display:none}
+  #stage{position:absolute;inset:0;display:grid;place-items:center;cursor:pointer;-webkit-tap-highlight-color:transparent}
   #photo{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:50% 22%;transition:filter .5s,transform 6s ease-in-out}
-  body.idle #photo{filter:brightness(.72) saturate(.9)}
-  body.speaking #photo{transform:scale(1.03)}
-  #shade{position:absolute;inset:0;background:linear-gradient(to top,rgba(0,0,0,.82) 0%,rgba(0,0,0,.15) 42%,rgba(0,0,0,0) 60%)}
-  #ring{position:absolute;inset:0;pointer-events:none;box-shadow:inset 0 0 0 0 rgba(255,122,89,0);transition:box-shadow .4s}
-  body.listening #ring{box-shadow:inset 0 0 0 5px rgba(87,214,141,.85)}
-  body.speaking #ring{box-shadow:inset 0 0 0 5px rgba(255,122,89,.9);animation:pulse 1.4s ease-in-out infinite}
-  body.connecting #ring{box-shadow:inset 0 0 0 5px rgba(255,255,255,.45);animation:pulse 1s ease-in-out infinite}
-  @keyframes pulse{50%{box-shadow:inset 0 0 0 11px rgba(255,122,89,.35)}}
+  #orbwrap{position:absolute;inset:0;display:grid;place-items:center;background:radial-gradient(900px 700px at 50% 35%,color-mix(in srgb,var(--c) 30%,transparent),transparent 70%)}
+  #orb{width:min(46vw,46vh);aspect-ratio:1;border-radius:50%;display:grid;place-items:center;font-size:min(13vw,13vh);font-weight:750;color:#0b0b0f;
+    background:radial-gradient(circle at 32% 28%,#fff8,transparent 45%),var(--c);transition:transform .35s}
+  #call.idle #photo{filter:brightness(.72) saturate(.9)}
+  #call.speaking #photo{transform:scale(1.03)}
+  #call.speaking #orb{animation:breathe 1.2s ease-in-out infinite}
+  #call.listening #orb{transform:scale(.94)}
+  @keyframes breathe{50%{transform:scale(1.07)}}
+  #shade{position:absolute;inset:0;background:linear-gradient(to top,rgba(0,0,0,.84) 0%,rgba(0,0,0,.15) 42%,rgba(0,0,0,0) 60%)}
+  #ring{position:absolute;inset:0;pointer-events:none;transition:box-shadow .4s}
+  #call.listening #ring{box-shadow:inset 0 0 0 5px rgba(87,214,141,.85)}
+  #call.speaking #ring{box-shadow:inset 0 0 0 5px var(--c);animation:pulse 1.4s ease-in-out infinite}
+  #call.connecting #ring{box-shadow:inset 0 0 0 5px rgba(255,255,255,.45);animation:pulse 1s ease-in-out infinite}
+  @keyframes pulse{50%{box-shadow:inset 0 0 0 11px color-mix(in srgb,var(--c) 35%,transparent)}}
+  #back{position:absolute;z-index:3;top:calc(16px + env(safe-area-inset-top));left:16px;background:rgba(0,0,0,.5);backdrop-filter:blur(8px);
+    border:1px solid rgba(255,255,255,.18);border-radius:999px;padding:11px 18px;font-weight:600;font-size:15px}
   #panel{position:absolute;left:0;right:0;bottom:0;padding:28px 28px calc(34px + env(safe-area-inset-bottom));text-align:center}
-  h1{font-size:clamp(34px,7vw,64px);font-weight:700;letter-spacing:-.02em}
-  #status{margin-top:8px;font-size:clamp(16px,2.6vw,22px);opacity:.88;min-height:1.4em}
-  #btn{margin-top:20px;font:inherit;font-size:clamp(17px,2.6vw,22px);font-weight:600;color:#0b0b0d;background:#fff;border:0;border-radius:999px;padding:16px 38px;cursor:pointer}
-  body.live #btn{background:#ff5a4d;color:#fff}
-  @media (prefers-reduced-motion:reduce){#photo,#ring{animation:none!important;transition:none!important}}
+  #who{font-size:clamp(32px,6.5vw,60px);font-weight:750;letter-spacing:-.02em}
+  #role{margin-top:4px;color:#d8d8e0;font-size:clamp(14px,2vw,18px)}
+  #status{margin-top:10px;font-size:clamp(16px,2.6vw,22px);opacity:.9;min-height:1.4em}
+  #btn{margin-top:18px;font-size:clamp(17px,2.6vw,22px);font-weight:650;color:#0b0b0f;background:#fff;border-radius:999px;padding:16px 38px}
+  #call.live #btn{background:#ff5a4d;color:#fff}
+  @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>
 </head>
-<body class="idle">
-<div id="stage">
-  <img id="photo" src="elena.jpg" alt="Elena">
-  <div id="shade"></div><div id="ring"></div>
-  <div id="panel">
-    <h1>Elena</h1>
-    <div id="status" aria-live="polite">Trykk for å snakke</div>
-    <button id="btn" type="button">Snakk med Elena</button>
+<body>
+
+<main id="lobby">
+  <header><h1>Hvem vil du snakke med?</h1><p>Rockstar MGT</p></header>
+  <div class="grid" id="grid"></div>
+</main>
+
+<section id="call" class="idle" aria-live="polite">
+  <button id="back" type="button">← Teamet</button>
+  <div id="stage">
+    <img id="photo" alt="" hidden>
+    <div id="orbwrap" hidden><div id="orb"></div></div>
+    <div id="shade"></div><div id="ring"></div>
+    <div id="panel">
+      <div id="who"></div><div id="role"></div>
+      <div id="status">Trykk for å snakke</div>
+      <button id="btn" type="button">Snakk</button>
+    </div>
   </div>
-</div>
+</section>
+
 <script type="module">
 import { Conversation } from "https://cdn.jsdelivr.net/npm/@elevenlabs/client/+esm";
-const AGENT_ID = "agent_6501m86m210nf5z8vr93b9zz2frz";
-const body = document.body, status = document.getElementById("status"), btn = document.getElementById("btn");
-let convo = null, busy = false, wake = null;
-const set = (cls, text, live) => { body.className = cls + (live ? " live" : ""); status.textContent = text; btn.textContent = live ? "Legg på" : "Snakk med Elena"; };
+
+const PEOPLE = [
+  { id: "elena",     name: "Elena",                 role: "Personlig assistent",                     line: "Alt som er viktig går via meg.", agent: "agent_6501m86m210nf5z8vr93b9zz2frz", photo: "elena.jpg", color: "#ff7a59", main: true },
+  { id: "creative",  name: "Creative Director",     role: "Persona, konsepter og kampanjer",         mono: "CD", agent: "agent_5601m86pckz8e0q8efd8pq941km7", color: "#c77dff" },
+  { id: "ops",       name: "Head of Revenue & Ops", role: "Tall, drift og onboarding",               mono: "RO", agent: "agent_6101m86pcr6qfa59mktbha79qk8r", color: "#4cc9f0" },
+  { id: "chatting",  name: "Chatting Manager",      role: "Chattere, skift, scripts og salg",        mono: "CM", agent: "agent_2901m86pcx3cfzjtsq6af9k78x76", color: "#57d68d" },
+  { id: "social",    name: "Social Media Manager",  role: "Innhold, planer, trender og Shanu",       mono: "SM", agent: "agent_0101m86pd23me9qaetm4v828r7fp", color: "#ffd166" },
+  { id: "recruiter", name: "Produksjonssjef",       role: "Rekruttering og team",                    mono: "PS", agent: "agent_2301m86pd7edehr9dbc8hm2g5ng3", color: "#ff5d8f" }
+];
+
+const $ = (s) => document.querySelector(s);
+const el = (tag, cls, text) => { const n = document.createElement(tag); if (cls) n.className = cls; if (text != null) n.textContent = text; return n; };
+
+/* lobby */
+for (const p of PEOPLE) {
+  const card = el("button", "card" + (p.main ? " main" : ""));
+  card.type = "button"; card.style.setProperty("--c", p.color);
+  if (p.main) {
+    const img = el("img"); img.src = p.photo; img.alt = "";
+    card.append(img, el("span", "tag", p.role), el("h2", null, p.name), el("p", null, p.line), el("span", "cta", "Snakk med " + p.name));
+  } else {
+    const dot = el("span", "dot"); dot.append(el("i"), document.createTextNode("Klar"));
+    card.append(el("span", "mono", p.mono), dot, el("h2", null, p.name), el("p", null, p.role));
+  }
+  card.addEventListener("click", () => open(p, true));
+  $("#grid").append(card);
+}
+
+/* call */
+const call = $("#call"), status = $("#status"), btn = $("#btn");
+let person = null, convo = null, busy = false, wake = null;
+const set = (state, text, live) => { call.className = state + (live ? " live" : ""); status.textContent = text; btn.textContent = live ? "Legg på" : "Snakk med " + person.name; };
+
+function open(p, autostart) {
+  person = p;
+  document.body.classList.add("incall");
+  call.style.setProperty("--c", p.color);
+  $("#who").textContent = p.name; $("#role").textContent = p.role;
+  $("#photo").hidden = !p.photo; $("#orbwrap").hidden = !!p.photo;
+  if (p.photo) $("#photo").src = p.photo; else $("#orb").textContent = p.mono;
+  set("idle", "Trykk for å snakke", false);
+  try { history.replaceState(null, "", "#" + p.id); } catch (e) {}
+  if (autostart) start();
+}
 async function start() {
-  if (busy) return; busy = true;
+  if (busy || convo) return; busy = true;
   set("connecting", "Kobler til …", true);
   try {
     await navigator.mediaDevices.getUserMedia({ audio: true });
     try { wake = await navigator.wakeLock?.request("screen"); } catch (e) {}
+    const mine = person;
     convo = await Conversation.startSession({
-      agentId: AGENT_ID, connectionType: "webrtc",
-      onConnect: () => set("listening", "Elena lytter", true),
-      onDisconnect: () => { convo = null; try { wake?.release(); } catch (e) {} set("idle", "Trykk for å snakke", false); },
-      onModeChange: (m) => { if (convo) set(m.mode === "speaking" ? "speaking" : "listening", m.mode === "speaking" ? "Elena snakker" : "Elena lytter", true); },
-      onError: (e) => { console.log("[Elena]", e); status.textContent = "Noe gikk galt. Trykk for å prøve igjen."; }
+      agentId: mine.agent, connectionType: "webrtc",
+      onConnect: () => set("listening", mine.name + " lytter", true),
+      onDisconnect: () => { convo = null; try { wake?.release(); } catch (e) {} if (person === mine) set("idle", "Trykk for å snakke", false); },
+      onModeChange: (m) => { if (convo && person === mine) set(m.mode === "speaking" ? "speaking" : "listening", mine.name + (m.mode === "speaking" ? " snakker" : " lytter"), true); },
+      onError: (e) => { console.log("[Rockstar]", e); status.textContent = "Noe gikk galt. Trykk for å prøve igjen."; }
     });
   } catch (e) {
-    console.log("[Elena]", e); convo = null;
+    console.log("[Rockstar]", e); convo = null;
     set("idle", e && e.name === "NotAllowedError" ? "Gi tilgang til mikrofonen, og trykk igjen" : "Fikk ikke kontakt. Trykk for å prøve igjen.", false);
   }
   busy = false;
 }
-async function stop() { if (!convo || busy) return; busy = true; try { await convo.endSession(); } catch (e) {} convo = null; set("idle", "Trykk for å snakke", false); busy = false; }
-document.getElementById("stage").addEventListener("click", () => (convo ? stop() : start()));
+async function stop() { if (!convo) return; const c = convo; convo = null; try { await c.endSession(); } catch (e) {} if (person) set("idle", "Trykk for å snakke", false); }
+
+$("#stage").addEventListener("click", () => (convo ? stop() : start()));
+$("#back").addEventListener("click", async (e) => {
+  e.stopPropagation(); await stop();
+  document.body.classList.remove("incall"); person = null;
+  try { history.replaceState(null, "", location.pathname); } catch (err) {}
+});
+
+/* a #name in the address opens that person directly; no microphone until the first tap */
+const wanted = PEOPLE.find((p) => "#" + p.id === location.hash);
+if (wanted) open(wanted, false);
 </script>
 </body>
 </html>
