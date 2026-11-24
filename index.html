@@ -21,7 +21,7 @@
     padding:calc(20px + env(safe-area-inset-top)) 20px calc(24px + env(safe-area-inset-bottom));text-align:center}
   #call{display:none} body.incall #call{display:flex} body.incall #lobby{display:none}
 
-  .avatar{position:relative;width:min(44vw,34vh);aspect-ratio:1;border-radius:50%;display:grid;place-items:center;flex:none;
+  .avatar{position:relative;width:min(62vw,46vh);aspect-ratio:1;border-radius:50%;display:grid;place-items:center;flex:none;
     border:5px solid #fff;box-shadow:0 18px 50px rgba(0,0,0,.55);background:#fff;overflow:visible;transition:transform .3s}
   .avatar img{width:100%;height:100%;border-radius:50%;object-fit:cover;display:block}
   .avatar span{font-size:min(12vw,9vh);font-weight:800;color:#111}
@@ -70,11 +70,9 @@
     <span class="role">Personlig Assistent</span>
     <span class="ringbtn" aria-label="Ring Elena"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M6.6 10.8a15.1 15.1 0 0 0 6.6 6.6l2.2-2.2a1 1 0 0 1 1-.25c1.1.37 2.3.57 3.6.57a1 1 0 0 1 1 1V20a1 1 0 0 1-1 1C10.6 21 3 13.4 3 4a1 1 0 0 1 1-1h3.5a1 1 0 0 1 1 1c0 1.25.2 2.45.57 3.57a1 1 0 0 1-.25 1z"/></svg></span>
   </button>
-  <div id="others"></div>
 </main>
 
 <section id="call" class="screen idle" aria-live="polite">
-  <button id="back" type="button">← Tilbake</button>
   <span class="avatar" id="av"></span>
   <h1 id="who"></h1>
   <span class="role" id="role"></span>
@@ -100,13 +98,6 @@ const el = (tag, cls, text) => { const n = document.createElement(tag); if (cls)
 /* lobby */
 const elena = PEOPLE[0];
 $("#main").addEventListener("click", () => open(elena, true));
-for (const p of PEOPLE.slice(1)) {
-  const m = el("button", "mini"); m.type = "button"; m.style.setProperty("--c", p.color);
-  m.append(el("i", null, p.mono), el("b", null, p.name));
-  m.setAttribute("aria-label", "Ring " + p.name);
-  m.addEventListener("click", () => open(p, true));
-  $("#others").append(m);
-}
 
 /* call */
 const call = $("#call"), status = $("#status"), btn = $("#btn");
@@ -134,7 +125,7 @@ async function start() {
     convo = await Conversation.startSession({
       agentId: mine.agent, connectionType: "webrtc",
       onConnect: () => set("listening", mine.name + " lytter", true),
-      onDisconnect: () => { convo = null; try { wake?.release(); } catch (e) {} if (person === mine) set("idle", "Trykk for å ringe", false); },
+      onDisconnect: () => { convo = null; try { wake?.release(); } catch (e) {} home(); },
       onModeChange: (m) => { if (convo && person === mine) set(m.mode === "speaking" ? "speaking" : "listening", mine.name + (m.mode === "speaking" ? " snakker" : " lytter"), true); },
       onError: (e) => { console.log("[Rockstar]", e); status.textContent = "Noe gikk galt. Trykk for å prøve igjen."; }
     });
@@ -144,18 +135,10 @@ async function start() {
   }
   busy = false;
 }
-async function stop() { if (!convo) return; const c = convo; convo = null; try { await c.endSession(); } catch (e) {} if (person) set("idle", "Trykk for å ringe", false); }
+function home() { document.body.classList.remove("incall"); person = null; try { history.replaceState(null, "", location.pathname); } catch (e) {} }
+async function stop() { if (!convo) { home(); return; } const c = convo; convo = null; try { await c.endSession(); } catch (e) {} home(); }
 
 call.addEventListener("click", () => (convo ? stop() : start()));
-$("#back").addEventListener("click", async (e) => {
-  e.stopPropagation(); await stop();
-  document.body.classList.remove("incall"); person = null;
-  try { history.replaceState(null, "", location.pathname); } catch (err) {}
-});
-
-/* a #name in the address opens that person directly; no microphone until the first tap */
-const wanted = PEOPLE.find((p) => "#" + p.id === location.hash);
-if (wanted) open(wanted, false);
 </script>
 </body>
 </html>
