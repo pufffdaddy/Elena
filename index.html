@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Elena">
+<meta name="robots" content="noindex,nofollow">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
+<title>Elena</title>
+<style>
+  *{box-sizing:border-box;margin:0}
+  html,body{height:100%;background:#0b0b0d;color:#fff;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;overflow:hidden}
+  #stage{position:fixed;inset:0;display:grid;place-items:center;cursor:pointer;-webkit-tap-highlight-color:transparent}
+  #photo{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:50% 22%;transition:filter .5s,transform 6s ease-in-out}
+  body.idle #photo{filter:brightness(.72) saturate(.9)}
+  body.speaking #photo{transform:scale(1.03)}
+  #shade{position:absolute;inset:0;background:linear-gradient(to top,rgba(0,0,0,.82) 0%,rgba(0,0,0,.15) 42%,rgba(0,0,0,0) 60%)}
+  #ring{position:absolute;inset:0;pointer-events:none;box-shadow:inset 0 0 0 0 rgba(255,122,89,0);transition:box-shadow .4s}
+  body.listening #ring{box-shadow:inset 0 0 0 5px rgba(87,214,141,.85)}
+  body.speaking #ring{box-shadow:inset 0 0 0 5px rgba(255,122,89,.9);animation:pulse 1.4s ease-in-out infinite}
+  body.connecting #ring{box-shadow:inset 0 0 0 5px rgba(255,255,255,.45);animation:pulse 1s ease-in-out infinite}
+  @keyframes pulse{50%{box-shadow:inset 0 0 0 11px rgba(255,122,89,.35)}}
+  #panel{position:absolute;left:0;right:0;bottom:0;padding:28px 28px calc(34px + env(safe-area-inset-bottom));text-align:center}
+  h1{font-size:clamp(34px,7vw,64px);font-weight:700;letter-spacing:-.02em}
+  #status{margin-top:8px;font-size:clamp(16px,2.6vw,22px);opacity:.88;min-height:1.4em}
+  #btn{margin-top:20px;font:inherit;font-size:clamp(17px,2.6vw,22px);font-weight:600;color:#0b0b0d;background:#fff;border:0;border-radius:999px;padding:16px 38px;cursor:pointer}
+  body.live #btn{background:#ff5a4d;color:#fff}
+  @media (prefers-reduced-motion:reduce){#photo,#ring{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body class="idle">
+<div id="stage">
+  <img id="photo" src="elena.jpg" alt="Elena">
+  <div id="shade"></div><div id="ring"></div>
+  <div id="panel">
+    <h1>Elena</h1>
+    <div id="status" aria-live="polite">Trykk for å snakke</div>
+    <button id="btn" type="button">Snakk med Elena</button>
+  </div>
+</div>
+<script type="module">
+import { Conversation } from "https://cdn.jsdelivr.net/npm/@elevenlabs/client/+esm";
+const AGENT_ID = "agent_6501m86m210nf5z8vr93b9zz2frz";
+const body = document.body, status = document.getElementById("status"), btn = document.getElementById("btn");
+let convo = null, busy = false, wake = null;
+const set = (cls, text, live) => { body.className = cls + (live ? " live" : ""); status.textContent = text; btn.textContent = live ? "Legg på" : "Snakk med Elena"; };
+async function start() {
+  if (busy) return; busy = true;
+  set("connecting", "Kobler til …", true);
+  try {
+    await navigator.mediaDevices.getUserMedia({ audio: true });
+    try { wake = await navigator.wakeLock?.request("screen"); } catch (e) {}
+    convo = await Conversation.startSession({
+      agentId: AGENT_ID, connectionType: "webrtc",
+      onConnect: () => set("listening", "Elena lytter", true),
+      onDisconnect: () => { convo = null; try { wake?.release(); } catch (e) {} set("idle", "Trykk for å snakke", false); },
+      onModeChange: (m) => { if (convo) set(m.mode === "speaking" ? "speaking" : "listening", m.mode === "speaking" ? "Elena snakker" : "Elena lytter", true); },
+      onError: (e) => { console.log("[Elena]", e); status.textContent = "Noe gikk galt. Trykk for å prøve igjen."; }
+    });
+  } catch (e) {
+    console.log("[Elena]", e); convo = null;
+    set("idle", e && e.name === "NotAllowedError" ? "Gi tilgang til mikrofonen, og trykk igjen" : "Fikk ikke kontakt. Trykk for å prøve igjen.", false);
+  }
+  busy = false;
+}
+async function stop() { if (!convo || busy) return; busy = true; try { await convo.endSession(); } catch (e) {} convo = null; set("idle", "Trykk for å snakke", false); busy = false; }
+document.getElementById("stage").addEventListener("click", () => (convo ? stop() : start()));
+</script>
+</body>
+</html>
